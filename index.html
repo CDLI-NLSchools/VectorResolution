@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Force Components Skill Builder</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            margin: 0;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            max-width: 540px;
+            width: 100%;
+            text-align: center;
+        }
+        .score-board {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+        .correct { color: #2ecc71; }
+        .incorrect { color: #e74c3c; }
+        .warning { color: #f39c12; }
+        
+        canvas {
+            background: #ffffff;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            margin: 10px 0;
+            width: 440px;
+            height: 280px;
+        }
+
+        .instruction-banner {
+            font-size: 0.95rem;
+            font-weight: bold;
+            color: #d35400;
+            margin: 5px 0 15px 0;
+            background-color: #fdebd0;
+            padding: 8px 12px;
+            border-radius: 20px;
+            display: inline-block;
+        }
+
+        .input-table {
+            width: 100%;
+            margin: 15px 0;
+            border-collapse: collapse;
+        }
+        .input-table td {
+            padding: 8px;
+            text-align: left;
+            font-size: 1.1rem;
+            font-weight: bold;
+        }
+        .input-table td:first-child {
+            width: 55%;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            font-size: 1rem;
+            text-align: center;
+            border: 1px solid #bdc3c7;
+            border-radius: 4px;
+            box-sizing: border-box;
+            color: #2c3e50;
+            font-weight: bold;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 10px;
+        }
+
+        button {
+            border: none;
+            padding: 12px 25px;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.2s;
+            flex: 1;
+        }
+
+        #submit-btn {
+            background-color: #3498db;
+            color: white;
+        }
+        #submit-btn:hover { background-color: #2980b9; }
+
+        #restart-btn {
+            background-color: #e67e22;
+            color: white;
+        }
+        #restart-btn:hover { background-color: #d35400; }
+
+        #feedback {
+            margin-top: 15px;
+            font-weight: bold;
+            min-height: 50px;
+            padding: 0 10px;
+            line-height: 1.5;
+        }
+
+        .ans-block {
+            font-size: 1.05rem;
+            margin-bottom: 4px;
+            color: #27ae60;
+        }
+
+        .continue-msg {
+            font-weight: bold;
+            font-size: 0.95rem;
+            color: #c0392b;
+            margin-top: 8px;
+        }
+
+        sub {
+            font-size: 0.75em;
+            line-height: 0;
+            vertical-align: baseline;
+            position: relative;
+            bottom: -0.2em;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Force Components Builder</h2>
+    
+    <div class="score-board">
+        <span class="correct">Correct: <span id="correct-count">0</span></span>
+        <span class="incorrect">Incorrect: <span id="incorrect-count">0</span></span>
+    </div>
+
+    <canvas id="forceCanvas" width="440" height="280"></canvas>
+
+    <div id="instruction-banner" class="instruction-banner">
+        Find the horizontal and vertical components (round all values to 1 decimal place).
+    </div>
+
+    <table class="input-table">
+        <tr id="row-fx">
+            <td>Horizontal Component (F<sub>x</sub>):</td>
+            <td id="cell-fx"><input type="text" id="ans-fx" placeholder="e.g. 68.7 N" autocomplete="off"></td>
+        </tr>
+        <tr id="row-fy">
+            <td>Vertical Component (F<sub>y</sub>):</td>
+            <td id="cell-fy"><input type="text" id="ans-fy" placeholder="e.g. 28.7 N" autocomplete="off"></td>
+        </tr>
+    </table>
+
+    <div class="button-group">
+        <button id="submit-btn" onclick="checkAnswer()">Submit Answer</button>
+        <button id="restart-btn" onclick="resetQuiz()">Restart Quiz</button>
+    </div>
+
+    <div id="feedback"></div>
+</div>
+
+<script>
+    let scoreCorrect = 0;
+    let scoreIncorrect = 0;
+    let sessionUID = "";
+
+    let F_val = 0;
+    let theta_deg = 0;
+    let isAngleWithHorizontal = true; // true = relative to horizontal axis, false = relative to vertical axis
+    let dirX = 1; // 1 = right, -1 = left
+    let dirY = 1; // 1 = up, -1 = down
+
+    let FxExact = 0;
+    let FyExact = 0;
+    let FxOneDecStr = "";
+    let FyOneDecStr = "";
+
+    const canvas = document.getElementById('forceCanvas');
+    const ctx = canvas.getContext('2d');
+
+    function init() {
+        let now = new Date();
+        let yearLastDigit = now.getFullYear().toString().slice(-1);
+        let month = String(now.getMonth() + 1).padStart(2, '0');
+        let day = String(now.getDate()).padStart(2, '0');
+        let randomPart = Math.floor(1000 + Math.random() * 9000).toString();
+        sessionUID = yearLastDigit + month + day + randomPart;
+
+        setupHiDPI();
+        generateQuestion();
+    }
+
+    function setupHiDPI() {
+        const dpr = window.devicePixelRatio || 1;
+        const rect = canvas.getBoundingClientRect();
+
+        canvas.width = rect.width * dpr;
+        canvas.height = rect.height * dpr;
+
+        ctx.scale(dpr, dpr);
+    }
+
+    function resetQuiz() {
+        scoreCorrect = 0;
+        scoreIncorrect = 0;
+        document.getElementById('correct-count').textContent = scoreCorrect;
+        document.getElementById('incorrect-count').textContent = scoreIncorrect;
+        generateQuestion();
+    }
+
+    function generateQuestion() {
+        document.getElementById('feedback').innerHTML = '';
+        const submitBtn = document.getElementById('submit-btn');
+        submitBtn.textContent = "Submit Answer";
+        submitBtn.style.backgroundColor = "#3498db";
+        submitBtn.onclick = checkAnswer;
+
+        ['ans-fx', 'ans-fy'].forEach(id => {
+            let el = document.getElementById(id);
+            if (el) {
+                el.value = '';
+                el.disabled = false;
+            }
+        });
+
+        // Randomize magnitude (20 N to 250 N)
+        F_val = Math.floor(Math.random() * 230) + 20;
+
+        // Randomize angle (20° to 70°)
+        theta_deg = Math.floor(Math.random() * 51) + 20;
+        let theta_rad = theta_deg * Math.PI / 180;
+
+        // Randomize angle reference: 70% chance horizontal, 30% vertical
+        isAngleWithHorizontal = Math.random() < 0.7;
+
+        // Randomize direction quadrant
+        dirX = Math.random() < 0.5 ? 1 : -1;
+        dirY = Math.random() < 0.5 ? 1 : -1;
+
+        if (isAngleWithHorizontal) {
+            FxExact = F_val * Math.cos(theta_rad);
+            FyExact = F_val * Math.sin(theta_rad);
+        } else {
+            FxExact = F_val * Math.sin(theta_rad);
+            FyExact = F_val * Math.cos(theta_rad);
+        }
+
+        FxOneDecStr = FxExact.toFixed(1);
+        FyOneDecStr = FyExact.toFixed(1);
+
+        drawDiagram();
+    }
+
+    function drawDiagram() {
+        const cssWidth = canvas.width / (window.devicePixelRatio || 1);
+        const cssHeight = canvas.height / (window.devicePixelRatio || 1);
+
+        ctx.clearRect(0, 0, cssWidth, cssHeight);
+
+        // Watermark ID
+        ctx.fillStyle = '#b0b6b9';
+        ctx.font = '11px sans-serif';
+        ctx.textAlign = 'right';
+        ctx.fillText("ID: " + sessionUID, cssWidth - 10, 15);
+
+        const originX = cssWidth / 2;
+        const originY = cssHeight / 2 + 10;
+        const vectorLen = 110;
+
+        const thetaRad = theta_deg * Math.PI / 180;
+        
+        // Exact vector math angle relative to positive X-axis (standard polar system)
+        let vectorAngleRad = 0;
+
+        if (dirX === 1 && dirY === 1) { // Q1: Up-Right
+            vectorAngleRad = isAngleWithHorizontal ? -thetaRad : -(Math.PI / 2 - thetaRad);
+        } else if (dirX === -1 && dirY === 1) { // Q2: Up-Left
+            vectorAngleRad = isAngleWithHorizontal ? -(Math.PI - thetaRad) : -(Math.PI / 2 + thetaRad);
+        } else if (dirX === -1 && dirY === -1) { // Q3: Down-Left
+            vectorAngleRad = isAngleWithHorizontal ? (Math.PI - thetaRad) : (Math.PI / 2 + thetaRad);
+        } else { // Q4: Down-Right
+            vectorAngleRad = isAngleWithHorizontal ? thetaRad : (Math.PI / 2 - thetaRad);
+        }
+
+        const tipX = originX + vectorLen * Math.cos(vectorAngleRad);
+        const tipY = originY + vectorLen * Math.sin(vectorAngleRad);
+
+        // Draw Axes Lines (Dashed Gray)
+        ctx.save();
+        ctx.setLineDash([4, 4]);
+        ctx.strokeStyle = '#bdc3c7';
+        ctx.lineWidth = 1.5;
+
+        // Horizontal axis line
+        ctx.beginPath();
+        ctx.moveTo(originX - 130, originY);
+        ctx.lineTo(originX + 130, originY);
+        ctx.stroke();
+
+        // Vertical axis line
+        ctx.beginPath();
+        ctx.moveTo(originX, originY - 110);
+        ctx.lineTo(originX, originY + 110);
+        ctx.stroke();
+        ctx.restore();
+
+        // Determine reference axis angle (standard polar)
+        let axisAngleRad = 0;
+        if (isAngleWithHorizontal) {
+            axisAngleRad = (dirX === 1) ? 0 : Math.PI;
+        } else {
+            axisAngleRad = (dirY === 1) ? -Math.PI / 2 : Math.PI / 2;
+        }
+
+        // Draw Angle Arc
+        ctx.save();
+        ctx.strokeStyle = '#e67e22';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        let arcRadius = 38;
+
+        // Draw arc explicitly from axis to vector
+        ctx.arc(originX, originY, arcRadius, axisAngleRad, vectorAngleRad, !isArcClockwise(axisAngleRad, vectorAngleRad));
+        ctx.stroke();
+
+        // Bisector Angle for exact degree label placement
+        let bisectorAngle = getArcBisector(axisAngleRad, vectorAngleRad);
+        let labelRad = arcRadius + 18;
+        let labelX = originX + labelRad * Math.cos(bisectorAngle);
+        let labelY = originY + labelRad * Math.sin(bisectorAngle);
+
+        ctx.fillStyle = '#d35400';
+        ctx.font = 'bold 13px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(`${theta_deg}°`, labelX, labelY);
+        ctx.restore();
+
+        // Draw Main Force Vector Arrow
+        drawArrow(originX, originY, tipX, tipY, '#2980b9', 3.5);
+
+        // Vector Magnitude Label Text
+        let forceLabelX = originX + (vectorLen + 25) * Math.cos(vectorAngleRad);
+        let forceLabelY = originY + (vectorLen + 25) * Math.sin(vectorAngleRad);
+
+        ctx.fillStyle = '#2980b9';
+        ctx.font = 'bold 16px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(`${F_val} N`, forceLabelX, forceLabelY);
+    }
+
+    function isArcClockwise(startAngle, endAngle) {
+        let diff = endAngle - startAngle;
+        // Normalize angle difference to [-PI, PI]
+        while (diff < -Math.PI) diff += 2 * Math.PI;
+        while (diff > Math.PI) diff -= 2 * Math.PI;
+        return diff > 0;
+    }
+
+    function getArcBisector(startAngle, endAngle) {
+        let diff = endAngle - startAngle;
+        while (diff < -Math.PI) diff += 2 * Math.PI;
+        while (diff > Math.PI) diff -= 2 * Math.PI;
+        return startAngle + diff / 2;
+    }
+
+    function drawArrow(fromx, fromy, tox, toy, color, width = 3) {
+        const headlen = 11;
+        const angle = Math.atan2(toy - fromy, tox - fromx);
+        
+        const lineEndX = tox - Math.cos(angle) * (headlen - 2);
+        const lineEndY = toy - Math.sin(angle) * (headlen - 2);
+
+        ctx.strokeStyle = color;
+        ctx.fillStyle = color;
+        ctx.lineWidth = width;
+
+        ctx.beginPath();
+        ctx.moveTo(fromx, fromy);
+        ctx.lineTo(lineEndX, lineEndY);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(tox, toy);
+        ctx.lineTo(tox - headlen * Math.cos(angle - Math.PI / 6), toy - headlen * Math.sin(angle - Math.PI / 6));
+        ctx.lineTo(tox - headlen * Math.cos(angle + Math.PI / 6), toy - headlen * Math.sin(angle + Math.PI / 6));
+        ctx.closePath();
+        ctx.fill();
+    }
+
+    function validateFormatAndDecimal(rawInput, expectedOneDecStr, fieldLabel) {
+        const exactFormatRegex = /^\d+(\.\d+)? N$/;
+        const missingSpaceRegex = /^\d+(\.\d+)?N$/i;
+        const lowercaseUnitRegex = /^\d+(\.\d+)? n$/;
+
+        let trimmed = rawInput.trim();
+        if (!exactFormatRegex.test(trimmed)) {
+            if (lowercaseUnitRegex.test(trimmed)) {
+                return { type: 'notation', msg: `Check unit capitalization in ${fieldLabel}: Use an uppercase "N" for Newtons.` };
+            } else if (missingSpaceRegex.test(trimmed)) {
+                return { type: 'notation', msg: `Check spacing in ${fieldLabel}: Include a space between number and unit (e.g. "68.7 N").` };
+            } else {
+                return { type: 'notation', msg: `Check formatting in ${fieldLabel}: Enter a number followed by space and "N" (e.g. "68.7 N").` };
+            }
+        }
+
+        let numStr = trimmed.split(" ")[0];
+        
+        if (!numStr.includes('.')) {
+            return { type: 'notation', msg: `Check precision in ${fieldLabel}: Round value to 1 decimal place (e.g. "${numStr}.0 N").` };
+        }
+
+        let decPlaces = numStr.split('.')[1].length;
+        if (decPlaces !== 1) {
+            return { type: 'notation', msg: `Check precision in ${fieldLabel}: Must have exactly 1 decimal place.` };
+        }
+
+        if (numStr !== expectedOneDecStr) {
+            return { type: 'math', msg: `Incorrect calculation for ${fieldLabel}.` };
+        }
+
+        return null;
+    }
+
+    function checkAnswer() {
+        const fxInputEl = document.getElementById('ans-fx');
+        const fyInputEl = document.getElementById('ans-fy');
+        const feedback = document.getElementById('feedback');
+
+        const fxRaw = fxInputEl ? fxInputEl.value : '';
+        const fyRaw = fyInputEl ? fyInputEl.value : '';
+
+        if (!fxRaw.trim() || !fyRaw.trim()) {
+            feedback.innerHTML = '<span class="warning">Please fill out both component fields before submitting.</span>';
+            return;
+        }
+
+        // Check Notation / Formatting Errors
+        let fxRes = validateFormatAndDecimal(fxRaw, FxOneDecStr, "Horizontal Component (F<sub>x</sub>)");
+        if (fxRes && fxRes.type === 'notation') {
+            feedback.innerHTML = `<span class="warning">${fxRes.msg}</span>`;
+            return;
+        }
+
+        let fyRes = validateFormatAndDecimal(fyRaw, FyOneDecStr, "Vertical Component (F<sub>y</sub>)");
+        if (fyRes && fyRes.type === 'notation') {
+            feedback.innerHTML = `<span class="warning">${fyRes.msg}</span>`;
+            return;
+        }
+
+        // Check Math Errors
+        let isFxMathWrong = fxRes && fxRes.type === 'math';
+        let isFyMathWrong = fyRes && fyRes.type === 'math';
+
+        if (isFxMathWrong || isFyMathWrong) {
+            handleFailure();
+            return;
+        }
+
+        // Both Correct
+        feedback.innerHTML = '<span class="correct">Correct! Both force components are accurate.</span>';
+        scoreCorrect++;
+        document.getElementById('correct-count').textContent = scoreCorrect;
+        if (fxInputEl) fxInputEl.disabled = true;
+        if (fyInputEl) fyInputEl.disabled = true;
+
+        setTimeout(generateQuestion, 1800);
+    }
+
+    function handleFailure() {
+        scoreIncorrect++;
+        document.getElementById('incorrect-count').textContent = scoreIncorrect;
+        
+        const fxInputEl = document.getElementById('ans-fx');
+        const fyInputEl = document.getElementById('ans-fy');
+        if (fxInputEl) fxInputEl.disabled = true;
+        if (fyInputEl) fyInputEl.disabled = true;
+
+        const submitBtn = document.getElementById('submit-btn');
+        submitBtn.textContent = "Next Question";
+        submitBtn.style.backgroundColor = "#e67e22";
+        submitBtn.onclick = function() {
+            generateQuestion();
+        };
+
+        document.getElementById('feedback').innerHTML = `
+            <div class="ans-block">[Horizontal Component (F<sub>x</sub>) = ${FxOneDecStr} N]</div>
+            <div class="ans-block">[Vertical Component (F<sub>y</sub>) = ${FyOneDecStr} N]</div>
+            <div class="continue-msg">Review your solution above, then select 'Next Question'.</div>
+        `;
+    }
+
+    window.onload = init;
+</script>
+
+</body>
+</html>
