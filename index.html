@@ -4,132 +4,342 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Force Components Skill Builder</title>
+    <!-- html2canvas for Dropbox proof clipboard capture -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
+        :root {
+            --primary: #2980b9;
+            --primary-hover: #1f6391;
+            --success: #27ae60;
+            --success-glow: #2ecc71;
+            --danger: #c0392b;
+            --warning-bg: #fef9e7;
+            --warning-border: #f39c12;
+            --amber-soft: #fcf3cf;
+            --amber-btn: #d68910;
+            --amber-btn-hover: #b9770e;
+            --text-dark: #2c3e50;
+            --bg-page: #eef2f5;
+            --card-bg: #ffffff;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f4f7f6;
+            background-color: var(--bg-page);
+            color: var(--text-dark);
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 20px;
+            padding: 20px 10px;
             margin: 0;
+            min-height: 100vh;
         }
+
         .container {
-            background-color: white;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            max-width: 540px;
+            background-color: var(--card-bg);
+            padding: 24px 28px;
+            border-radius: 14px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+            max-width: 560px;
             width: 100%;
             text-align: center;
+            position: relative;
         }
-        .score-board {
+
+        /* Top Progress Bar & Verification Header */
+        .header-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.82rem;
+            color: #7f8c8d;
+            font-weight: 600;
+            margin-bottom: 8px;
+            letter-spacing: 0.3px;
+        }
+
+        .scorm-badge {
+            background: #e8f4f8;
+            color: #2980b9;
+            padding: 2px 7px;
+            border-radius: 4px;
+            font-size: 0.72rem;
+            text-transform: uppercase;
+        }
+
+        .progress-container {
+            background: #e5e8e8;
+            border-radius: 10px;
+            height: 14px;
+            width: 100%;
+            overflow: hidden;
+            margin-bottom: 12px;
+            position: relative;
+        }
+
+        .progress-fill {
+            background: linear-gradient(90deg, #2ecc71, #27ae60);
+            height: 100%;
+            width: 0%;
+            transition: width 0.45s ease-out;
+            border-radius: 10px;
+        }
+
+        .stats-bar {
             display: flex;
             justify-content: space-around;
+            background: #f8fafb;
+            border: 1px solid #e1e8ed;
+            padding: 8px 12px;
+            border-radius: 8px;
             margin-bottom: 15px;
-            font-size: 1.2rem;
             font-weight: bold;
+            font-size: 0.95rem;
         }
-        .correct { color: #2ecc71; }
-        .incorrect { color: #e74c3c; }
-        .warning { color: #f39c12; }
-        
+        .stats-item span {
+            color: var(--primary);
+            font-size: 1.05rem;
+        }
+
+        h2 {
+            margin: 6px 0 10px 0;
+            color: #1a252f;
+            font-size: 1.5rem;
+        }
+
         canvas {
             background: #ffffff;
-            border: 1px solid #e0e0e0;
+            border: 1px solid #dcdde1;
             border-radius: 8px;
-            margin: 10px 0;
+            margin: 6px 0;
             width: 440px;
-            height: 280px;
+            height: 270px;
+            max-width: 100%;
         }
 
         .instruction-banner {
-            font-size: 0.95rem;
-            font-weight: bold;
-            color: #d35400;
-            margin: 5px 0 15px 0;
-            background-color: #fdebd0;
-            padding: 8px 12px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #a04000;
+            background-color: #fef5e7;
+            border: 1px solid #f9e1b7;
+            padding: 6px 12px;
             border-radius: 20px;
             display: inline-block;
+            margin: 8px 0 12px 0;
         }
 
         .input-table {
             width: 100%;
-            margin: 15px 0;
-            border-collapse: collapse;
+            margin: 10px 0 14px 0;
+            border-collapse: separate;
+            border-spacing: 0 8px;
         }
         .input-table td {
-            padding: 8px;
-            text-align: left;
-            font-size: 1.1rem;
-            font-weight: bold;
+            padding: 6px 8px;
+            font-size: 1.02rem;
+            font-weight: 600;
         }
         .input-table td:first-child {
-            width: 55%;
+            width: 58%;
+            text-align: right;
+            padding-right: 12px;
+            color: #34495e;
         }
 
         input[type="text"] {
             width: 100%;
-            padding: 8px;
+            padding: 9px 10px;
             font-size: 1rem;
             text-align: center;
-            border: 1px solid #bdc3c7;
-            border-radius: 4px;
-            box-sizing: border-box;
+            border: 2px solid #bdc3c7;
+            border-radius: 6px;
             color: #2c3e50;
             font-weight: bold;
+            transition: border-color 0.2s, background-color 0.2s;
+            outline: none;
+        }
+        input[type="text"]:focus {
+            border-color: var(--primary);
+            background-color: #fafffe;
+        }
+        input[type="text"]:disabled {
+            background-color: #f2f4f4;
+            color: #566573;
+            border-color: #d5dbdb;
         }
 
         .button-group {
             display: flex;
-            gap: 15px;
+            gap: 12px;
             justify-content: center;
-            margin-top: 10px;
+            margin-top: 8px;
         }
 
         button {
             border: none;
-            padding: 12px 25px;
-            font-size: 1rem;
+            padding: 12px 20px;
+            font-size: 0.98rem;
             font-weight: bold;
-            border-radius: 5px;
+            border-radius: 6px;
             cursor: pointer;
-            transition: background 0.2s;
-            flex: 1;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
         }
 
         #submit-btn {
-            background-color: #3498db;
+            background-color: var(--primary);
             color: white;
+            flex: 2;
         }
-        #submit-btn:hover { background-color: #2980b9; }
+        #submit-btn:hover:not(:disabled) { background-color: var(--primary-hover); }
 
         #restart-btn {
-            background-color: #e67e22;
+            background-color: #7f8c8d;
             color: white;
+            flex: 1;
         }
-        #restart-btn:hover { background-color: #d35400; }
+        #restart-btn:hover { background-color: #626567; }
 
-        #feedback {
+        /* Amber Bailout Button */
+        .bailout-container {
+            margin-top: 10px;
+            padding-top: 8px;
+        }
+        #bailout-btn {
+            width: 100%;
+            background-color: var(--amber-soft);
+            color: #935116;
+            border: 1.5px dashed var(--amber-btn);
+            font-size: 0.92rem;
+            padding: 9px 14px;
+        }
+        #bailout-btn:hover:not(:disabled) {
+            background-color: #fae5b9;
+            color: #783407;
+            border-style: solid;
+        }
+        #bailout-btn:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+        }
+
+        /* Feedback Area */
+        #feedback-area {
+            margin-top: 14px;
+            text-align: left;
+            min-height: 24px;
+        }
+        .feedback-banner {
+            padding: 10px 14px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.94rem;
+            margin-bottom: 10px;
+        }
+        .feedback-correct {
+            background-color: #eafaf1;
+            color: #1e8449;
+            border: 1px solid #a9dfbf;
+        }
+        .feedback-notation {
+            background-color: #fef9e7;
+            color: #9a7d0a;
+            border-left: 5px solid var(--warning-border);
+            font-size: 0.92rem;
+            padding: 9px 12px;
+        }
+        .feedback-incorrect {
+            background-color: #fdedec;
+            color: #922b21;
+            border: 1px solid #f5b7b1;
+        }
+
+        /* Walkthrough Box */
+        .walkthrough-box {
+            background: #ffffff;
+            border: 1.5px solid #f39c12;
+            border-radius: 8px;
+            padding: 14px 16px;
+            margin-top: 10px;
+            box-shadow: 0 4px 12px rgba(243, 156, 18, 0.08);
+            animation: fadeIn 0.3s ease-in;
+        }
+        .walkthrough-header {
+            color: #b9770e;
+            font-weight: bold;
+            font-size: 1rem;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            border-bottom: 1px solid #fdebd0;
+            padding-bottom: 6px;
+        }
+        .step-item {
+            margin-bottom: 9px;
+            font-size: 0.91rem;
+            line-height: 1.45;
+            color: #34495e;
+        }
+        .step-num {
+            font-weight: bold;
+            color: #d35400;
+        }
+        .math-statement {
+            font-family: 'Cambria', 'Georgia', serif;
+            font-size: 0.97rem;
+            background: #fdfefe;
+            padding: 4px 8px;
+            margin: 3px 0;
+            display: inline-block;
+            border-radius: 4px;
+            border-left: 3px solid #2980b9;
+        }
+
+        /* Victory Modal / Overlay */
+        .victory-card {
+            background: linear-gradient(135deg, #fafffa, #eafaf1);
+            border: 2px solid var(--success);
+            padding: 18px;
+            border-radius: 10px;
             margin-top: 15px;
+            animation: bounceIn 0.4s ease-out;
+        }
+        .victory-title {
+            color: var(--success);
+            font-size: 1.3rem;
             font-weight: bold;
-            min-height: 50px;
-            padding: 0 10px;
-            line-height: 1.5;
+            margin-bottom: 6px;
         }
 
-        .ans-block {
-            font-size: 1.05rem;
-            margin-bottom: 4px;
+        .proof-btn-container {
+            margin-top: 12px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .proof-btn {
+            background-color: #27ae60;
+            color: white;
+            font-size: 0.88rem;
+            padding: 8px 14px;
+        }
+        .proof-btn:hover { background-color: #1e8449; }
+
+        .toast-msg {
+            font-size: 0.8rem;
             color: #27ae60;
-        }
-
-        .continue-msg {
+            margin-top: 6px;
             font-weight: bold;
-            font-size: 0.95rem;
-            color: #c0392b;
-            margin-top: 8px;
         }
 
         sub {
@@ -139,118 +349,288 @@
             position: relative;
             bottom: -0.2em;
         }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes bounceIn {
+            0% { transform: scale(0.96); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h2>Force Components Builder</h2>
+<div class="container" id="activity-card">
     
-    <div class="score-board">
-        <span class="correct">Correct: <span id="correct-count">0</span></span>
-        <span class="incorrect">Incorrect: <span id="incorrect-count">0</span></span>
+    <!-- Header Meta: Verification & SCORM State -->
+    <div class="header-meta">
+        <div>Session ID: <strong id="session-uid">...</strong></div>
+        <div id="scorm-status-badge" class="scorm-badge">SCORM: Connecting...</div>
     </div>
 
-    <canvas id="forceCanvas" width="440" height="280"></canvas>
+    <!-- Progress Fill Bar -->
+    <div class="progress-container" title="Progress toward 100% Mastery">
+        <div class="progress-fill" id="progress-fill"></div>
+    </div>
+
+    <!-- Stats Dashboard -->
+    <div class="stats-bar">
+        <div class="stats-item">Mastery: <span id="mastery-percent">0%</span></div>
+        <div class="stats-item">Target: <span id="progress-count">0 / 5</span></div>
+        <div class="stats-item">Attempts: <span id="total-attempts">0</span></div>
+    </div>
+
+    <h2>Force Components Builder</h2>
+
+    <canvas id="forceCanvas" width="440" height="270"></canvas>
 
     <div id="instruction-banner" class="instruction-banner">
-        Find the horizontal and vertical components (round all values to 1 decimal place).
+        Find the magnitude of both force components (round to 1 decimal place).
     </div>
 
     <table class="input-table">
         <tr id="row-fx">
             <td>Horizontal Component (F<sub>x</sub>):</td>
-            <td id="cell-fx"><input type="text" id="ans-fx" placeholder="e.g. 68.7 N" autocomplete="off"></td>
+            <td><input type="text" id="ans-fx" placeholder="e.g. 68.7 N" autocomplete="off" spellcheck="false"></td>
         </tr>
         <tr id="row-fy">
             <td>Vertical Component (F<sub>y</sub>):</td>
-            <td id="cell-fy"><input type="text" id="ans-fy" placeholder="e.g. 28.7 N" autocomplete="off"></td>
+            <td><input type="text" id="ans-fy" placeholder="e.g. 28.7 N" autocomplete="off" spellcheck="false"></td>
         </tr>
     </table>
 
     <div class="button-group">
-        <button id="submit-btn" onclick="checkAnswer()">Submit Answer</button>
-        <button id="restart-btn" onclick="resetQuiz()">Restart Quiz</button>
+        <button id="submit-btn" onclick="handleSubmit()">Check Answer</button>
+        <button id="restart-btn" onclick="resetPracticeSession()">Reset</button>
     </div>
 
-    <div id="feedback"></div>
+    <div class="bailout-container">
+        <button id="bailout-btn" onclick="triggerWalkthrough(false)">💡 Walk Me Through This One</button>
+    </div>
+
+    <div id="feedback-area"></div>
+
+    <!-- Mastery Victory Card -->
+    <div id="victory-card" class="victory-card" style="display: none;">
+        <div class="victory-title">🎉 Mastery Goal Achieved! (100%)</div>
+        <p style="margin: 6px 0; font-size: 0.92rem; color: #34495e;">
+            Your grade of <strong>100%</strong> has been permanently committed to Brightspace. You can keep practicing safely without losing your grade, or copy your completion proof below.
+        </p>
+        <div class="proof-btn-container">
+            <button class="proof-btn" onclick="copyProofToClipboard()">📋 Copy Proof to Clipboard</button>
+        </div>
+        <div id="toast" class="toast-msg" style="display:none;">Proof image copied to clipboard!</div>
+    </div>
+
 </div>
 
 <script>
-    let scoreCorrect = 0;
-    let scoreIncorrect = 0;
+    /* ==========================================================================
+       SCORM 1.2 D2L / BRIGHTSPACE INTEGRATION (ROBUST RECURSIVE DISCOVERY)
+       ========================================================================== */
+    let scormAPI = null;
+    let isScormConnected = false;
+    let previousLmsScore = 0;
+
+    function findScormAPI(win) {
+        let attempts = 0;
+        while (win && attempts < 10) {
+            try {
+                if (win.API) return win.API;
+            } catch (e) {
+                // Cross-origin boundary reached
+                break;
+            }
+            if (win.parent && win.parent !== win) {
+                attempts++;
+                win = win.parent;
+            } else {
+                break;
+            }
+        }
+        return null;
+    }
+
+    function initSCORM() {
+        try {
+            scormAPI = findScormAPI(window) || (window.opener ? findScormAPI(window.opener) : null);
+            const badge = document.getElementById('scorm-status-badge');
+
+            if (scormAPI) {
+                let initResult = scormAPI.LMSInitialize("");
+                if (initResult === "true" || initResult === true) {
+                    isScormConnected = true;
+                    badge.textContent = "D2L SCORM Connected";
+                    badge.style.background = "#eafaf1";
+                    badge.style.color = "#27ae60";
+
+                    // Retrieve existing raw score to enforce non-destructive grading
+                    let existingRaw = scormAPI.LMSGetValue("cmi.core.score.raw");
+                    if (existingRaw !== "" && !isNaN(existingRaw)) {
+                        previousLmsScore = parseFloat(existingRaw);
+                    }
+
+                    // Set standard SCORM 1.2 parameters
+                    scormAPI.LMSSetValue("cmi.core.score.min", "0");
+                    scormAPI.LMSSetValue("cmi.core.score.max", "100");
+
+                    // Set initial incomplete status only if not already completed
+                    let currentStatus = scormAPI.LMSGetValue("cmi.core.lesson_status");
+                    if (currentStatus !== "completed" && currentStatus !== "passed") {
+                        scormAPI.LMSSetValue("cmi.core.lesson_status", "incomplete");
+                    }
+                    scormAPI.LMSCommit("");
+                } else {
+                    badge.textContent = "SCORM Standalone";
+                }
+            } else {
+                badge.textContent = "Offline Mode";
+            }
+        } catch (err) {
+            console.warn("SCORM Discovery failed or running locally:", err);
+            document.getElementById('scorm-status-badge').textContent = "Offline Mode";
+        }
+    }
+
+    function updateScormScore(newScore) {
+        if (!isScormConnected || !scormAPI) return;
+
+        try {
+            // Brightspace non-destructive score rule: Math.max ensures grades never regress
+            let scoreToCommit = Math.max(previousLmsScore, newScore);
+            previousLmsScore = scoreToCommit;
+
+            scormAPI.LMSSetValue("cmi.core.score.raw", scoreToCommit.toString());
+
+            if (scoreToCommit >= 100) {
+                scormAPI.LMSSetValue("cmi.core.lesson_status", "completed");
+            } else {
+                let currentStatus = scormAPI.LMSGetValue("cmi.core.lesson_status");
+                if (currentStatus !== "completed") {
+                    scormAPI.LMSSetValue("cmi.core.lesson_status", "incomplete");
+                }
+            }
+            scormAPI.LMSCommit("");
+        } catch (e) {
+            console.error("Error committing score to Brightspace:", e);
+        }
+    }
+
+    function finishSCORM() {
+        if (isScormConnected && scormAPI) {
+            try {
+                scormAPI.LMSCommit("");
+                scormAPI.LMSFinish("");
+            } catch (e) {
+                console.warn("LMSFinish invocation notice:", e);
+            }
+        }
+    }
+
+    window.addEventListener('beforeunload', finishSCORM);
+
+
+    /* ==========================================================================
+       ACTIVITY STATE & PEDAGOGICAL ENGINE
+       ========================================================================== */
+    const MASTERY_GOAL = 5; // 5 correct = 100%
+    let consecutiveCorrect = 0;
+    let highestMasteryPercentage = 0;
+    let totalAttemptsCount = 0;
     let sessionUID = "";
 
+    // Problem variables
     let F_val = 0;
     let theta_deg = 0;
-    let isAngleWithHorizontal = true; // true = relative to horizontal axis, false = relative to vertical axis
+    let isAngleWithHorizontal = true;
     let dirX = 1; // 1 = right, -1 = left
     let dirY = 1; // 1 = up, -1 = down
-
     let FxExact = 0;
     let FyExact = 0;
     let FxOneDecStr = "";
     let FyOneDecStr = "";
 
+    let isAwaitingNext = false;
+
     const canvas = document.getElementById('forceCanvas');
     const ctx = canvas.getContext('2d');
 
     function init() {
-        let now = new Date();
-        let yearLastDigit = now.getFullYear().toString().slice(-1);
-        let month = String(now.getMonth() + 1).padStart(2, '0');
-        let day = String(now.getDate()).padStart(2, '0');
-        let randomPart = Math.floor(1000 + Math.random() * 9000).toString();
-        sessionUID = yearLastDigit + month + day + randomPart;
+        // Generate verifiable session verification ID: YMMDD-RAND
+        const now = new Date();
+        const yearDigit = now.getFullYear().toString().slice(-1);
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const rand = Math.floor(1000 + Math.random() * 9000);
+        sessionUID = `${yearDigit}${month}${day}-${rand}`;
+        document.getElementById('session-uid').textContent = sessionUID;
 
         setupHiDPI();
+        initSCORM();
+
+        // Keyboard handler for Enter key advancing
+        window.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                if (isAwaitingNext) {
+                    generateQuestion();
+                } else {
+                    handleSubmit();
+                }
+            }
+        });
+
         generateQuestion();
     }
 
     function setupHiDPI() {
         const dpr = window.devicePixelRatio || 1;
         const rect = canvas.getBoundingClientRect();
-
-        canvas.width = rect.width * dpr;
-        canvas.height = rect.height * dpr;
-
+        canvas.width = (rect.width || 440) * dpr;
+        canvas.height = (rect.height || 270) * dpr;
         ctx.scale(dpr, dpr);
     }
 
-    function resetQuiz() {
-        scoreCorrect = 0;
-        scoreIncorrect = 0;
-        document.getElementById('correct-count').textContent = scoreCorrect;
-        document.getElementById('incorrect-count').textContent = scoreIncorrect;
+    function resetPracticeSession() {
+        consecutiveCorrect = 0;
+        updateUIProgress();
         generateQuestion();
     }
 
     function generateQuestion() {
-        document.getElementById('feedback').innerHTML = '';
+        isAwaitingNext = false;
+        document.getElementById('feedback-area').innerHTML = '';
+
         const submitBtn = document.getElementById('submit-btn');
-        submitBtn.textContent = "Submit Answer";
-        submitBtn.style.backgroundColor = "#3498db";
-        submitBtn.onclick = checkAnswer;
+        submitBtn.textContent = "Check Answer";
+        submitBtn.style.backgroundColor = "var(--primary)";
+        submitBtn.onclick = handleSubmit;
+
+        const bailoutBtn = document.getElementById('bailout-btn');
+        bailoutBtn.disabled = false;
 
         ['ans-fx', 'ans-fy'].forEach(id => {
             let el = document.getElementById(id);
-            if (el) {
-                el.value = '';
-                el.disabled = false;
-            }
+            el.value = '';
+            el.disabled = false;
+            el.style.backgroundColor = '#ffffff';
         });
 
-        // Randomize magnitude (20 N to 250 N)
-        F_val = Math.floor(Math.random() * 230) + 20;
+        // Focus first input
+        document.getElementById('ans-fx').focus();
+
+        // Randomize magnitude (25 N to 260 N)
+        F_val = Math.floor(Math.random() * 236) + 25;
 
         // Randomize angle (20° to 70°)
         theta_deg = Math.floor(Math.random() * 51) + 20;
-        let theta_rad = theta_deg * Math.PI / 180;
+        const theta_rad = theta_deg * Math.PI / 180;
 
-        // Randomize angle reference: 70% chance horizontal, 30% vertical
-        isAngleWithHorizontal = Math.random() < 0.7;
+        // 65% chance angle is referenced to horizontal, 35% vertical
+        isAngleWithHorizontal = Math.random() < 0.65;
 
-        // Randomize direction quadrant
+        // Randomize directional quadrant
         dirX = Math.random() < 0.5 ? 1 : -1;
         dirY = Math.random() < 0.5 ? 1 : -1;
 
@@ -269,59 +649,66 @@
     }
 
     function drawDiagram() {
-        const cssWidth = canvas.width / (window.devicePixelRatio || 1);
-        const cssHeight = canvas.height / (window.devicePixelRatio || 1);
+        const dpr = window.devicePixelRatio || 1;
+        const cssWidth = canvas.width / dpr;
+        const cssHeight = canvas.height / dpr;
 
         ctx.clearRect(0, 0, cssWidth, cssHeight);
 
-        // Watermark ID
-        ctx.fillStyle = '#b0b6b9';
-        ctx.font = '11px sans-serif';
+        // Security session watermark
+        ctx.fillStyle = '#b2bec3';
+        ctx.font = '10px monospace';
         ctx.textAlign = 'right';
-        ctx.fillText("ID: " + sessionUID, cssWidth - 10, 15);
+        ctx.fillText(`ID: ${sessionUID}`, cssWidth - 10, 16);
 
         const originX = cssWidth / 2;
-        const originY = cssHeight / 2 + 10;
-        const vectorLen = 110;
-
+        const originY = cssHeight / 2 + 6;
+        const vectorLen = 112;
         const thetaRad = theta_deg * Math.PI / 180;
-        
-        // Exact vector math angle relative to positive X-axis (standard polar system)
-        let vectorAngleRad = 0;
 
-        if (dirX === 1 && dirY === 1) { // Q1: Up-Right
+        let vectorAngleRad = 0;
+        if (dirX === 1 && dirY === 1) { // Q1 (up-right)
             vectorAngleRad = isAngleWithHorizontal ? -thetaRad : -(Math.PI / 2 - thetaRad);
-        } else if (dirX === -1 && dirY === 1) { // Q2: Up-Left
+        } else if (dirX === -1 && dirY === 1) { // Q2 (up-left)
             vectorAngleRad = isAngleWithHorizontal ? -(Math.PI - thetaRad) : -(Math.PI / 2 + thetaRad);
-        } else if (dirX === -1 && dirY === -1) { // Q3: Down-Left
+        } else if (dirX === -1 && dirY === -1) { // Q3 (down-left)
             vectorAngleRad = isAngleWithHorizontal ? (Math.PI - thetaRad) : (Math.PI / 2 + thetaRad);
-        } else { // Q4: Down-Right
+        } else { // Q4 (down-right)
             vectorAngleRad = isAngleWithHorizontal ? thetaRad : (Math.PI / 2 - thetaRad);
         }
 
         const tipX = originX + vectorLen * Math.cos(vectorAngleRad);
         const tipY = originY + vectorLen * Math.sin(vectorAngleRad);
 
-        // Draw Axes Lines (Dashed Gray)
+        // Grid axes (dashed)
         ctx.save();
         ctx.setLineDash([4, 4]);
-        ctx.strokeStyle = '#bdc3c7';
+        ctx.strokeStyle = '#cbd5e1';
         ctx.lineWidth = 1.5;
 
-        // Horizontal axis line
+        // Horizontal axis
         ctx.beginPath();
-        ctx.moveTo(originX - 130, originY);
-        ctx.lineTo(originX + 130, originY);
+        ctx.moveTo(originX - 135, originY);
+        ctx.lineTo(originX + 135, originY);
         ctx.stroke();
 
-        // Vertical axis line
+        // Vertical axis
         ctx.beginPath();
-        ctx.moveTo(originX, originY - 110);
-        ctx.lineTo(originX, originY + 110);
+        ctx.moveTo(originX, originY - 105);
+        ctx.lineTo(originX, originY + 105);
         ctx.stroke();
         ctx.restore();
 
-        // Determine reference axis angle (standard polar)
+        // Quadrant direction labels on axis ends
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = '10px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('+x', originX + 130, originY - 6);
+        ctx.fillText('-x', originX - 130, originY - 6);
+        ctx.fillText('+y', originX + 14, originY - 96);
+        ctx.fillText('-y', originX + 14, originY + 102);
+
+        // Determine reference axis angle
         let axisAngleRad = 0;
         if (isAngleWithHorizontal) {
             axisAngleRad = (dirX === 1) ? 0 : Math.PI;
@@ -329,18 +716,17 @@
             axisAngleRad = (dirY === 1) ? -Math.PI / 2 : Math.PI / 2;
         }
 
-        // Draw Angle Arc
+        // Draw angle arc
         ctx.save();
         ctx.strokeStyle = '#e67e22';
         ctx.lineWidth = 2;
         ctx.beginPath();
-        let arcRadius = 38;
+        const arcRadius = 40;
 
-        // Draw arc explicitly from axis to vector
         ctx.arc(originX, originY, arcRadius, axisAngleRad, vectorAngleRad, !isArcClockwise(axisAngleRad, vectorAngleRad));
         ctx.stroke();
 
-        // Bisector Angle for exact degree label placement
+        // Label position
         let bisectorAngle = getArcBisector(axisAngleRad, vectorAngleRad);
         let labelRad = arcRadius + 18;
         let labelX = originX + labelRad * Math.cos(bisectorAngle);
@@ -353,15 +739,15 @@
         ctx.fillText(`${theta_deg}°`, labelX, labelY);
         ctx.restore();
 
-        // Draw Main Force Vector Arrow
-        drawArrow(originX, originY, tipX, tipY, '#2980b9', 3.5);
+        // Main force vector arrow
+        drawVectorArrow(originX, originY, tipX, tipY, '#2980b9', 3.5);
 
-        // Vector Magnitude Label Text
-        let forceLabelX = originX + (vectorLen + 25) * Math.cos(vectorAngleRad);
-        let forceLabelY = originY + (vectorLen + 25) * Math.sin(vectorAngleRad);
+        // Vector magnitude label
+        let forceLabelX = originX + (vectorLen + 28) * Math.cos(vectorAngleRad);
+        let forceLabelY = originY + (vectorLen + 28) * Math.sin(vectorAngleRad);
 
-        ctx.fillStyle = '#2980b9';
-        ctx.font = 'bold 16px sans-serif';
+        ctx.fillStyle = '#1f618d';
+        ctx.font = 'bold 15px sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(`${F_val} N`, forceLabelX, forceLabelY);
@@ -369,7 +755,6 @@
 
     function isArcClockwise(startAngle, endAngle) {
         let diff = endAngle - startAngle;
-        // Normalize angle difference to [-PI, PI]
         while (diff < -Math.PI) diff += 2 * Math.PI;
         while (diff > Math.PI) diff -= 2 * Math.PI;
         return diff > 0;
@@ -382,13 +767,13 @@
         return startAngle + diff / 2;
     }
 
-    function drawArrow(fromx, fromy, tox, toy, color, width = 3) {
+    function drawVectorArrow(fromx, fromy, tox, toy, color, width) {
         const headlen = 11;
         const angle = Math.atan2(toy - fromy, tox - fromx);
-        
         const lineEndX = tox - Math.cos(angle) * (headlen - 2);
         const lineEndY = toy - Math.sin(angle) * (headlen - 2);
 
+        ctx.save();
         ctx.strokeStyle = color;
         ctx.fillStyle = color;
         ctx.lineWidth = width;
@@ -404,108 +789,244 @@
         ctx.lineTo(tox - headlen * Math.cos(angle + Math.PI / 6), toy - headlen * Math.sin(angle + Math.PI / 6));
         ctx.closePath();
         ctx.fill();
+        ctx.restore();
     }
 
+
+    /* ==========================================================================
+       SMART VALIDATION & SUBMISSION HANDLING
+       ========================================================================== */
     function validateFormatAndDecimal(rawInput, expectedOneDecStr, fieldLabel) {
+        const trimmed = rawInput.trim();
         const exactFormatRegex = /^\d+(\.\d+)? N$/;
         const missingSpaceRegex = /^\d+(\.\d+)?N$/i;
         const lowercaseUnitRegex = /^\d+(\.\d+)? n$/;
 
-        let trimmed = rawInput.trim();
         if (!exactFormatRegex.test(trimmed)) {
             if (lowercaseUnitRegex.test(trimmed)) {
-                return { type: 'notation', msg: `Check unit capitalization in ${fieldLabel}: Use an uppercase "N" for Newtons.` };
+                return { type: 'notation', msg: `Notation Warning (${fieldLabel}): Use uppercase "N" for Newtons (e.g., "${expectedOneDecStr} N").` };
             } else if (missingSpaceRegex.test(trimmed)) {
-                return { type: 'notation', msg: `Check spacing in ${fieldLabel}: Include a space between number and unit (e.g. "68.7 N").` };
+                return { type: 'notation', msg: `Notation Warning (${fieldLabel}): Include a space between number and unit (e.g., "${expectedOneDecStr} N").` };
             } else {
-                return { type: 'notation', msg: `Check formatting in ${fieldLabel}: Enter a number followed by space and "N" (e.g. "68.7 N").` };
+                return { type: 'notation', msg: `Format Warning (${fieldLabel}): Enter your answer as a number with unit "N" (e.g., "${expectedOneDecStr} N").` };
             }
         }
 
-        let numStr = trimmed.split(" ")[0];
-        
+        const numStr = trimmed.split(" ")[0];
         if (!numStr.includes('.')) {
-            return { type: 'notation', msg: `Check precision in ${fieldLabel}: Round value to 1 decimal place (e.g. "${numStr}.0 N").` };
+            return { type: 'notation', msg: `Precision Warning (${fieldLabel}): Round to 1 decimal place (e.g., "${numStr}.0 N").` };
         }
 
-        let decPlaces = numStr.split('.')[1].length;
+        const decPlaces = numStr.split('.')[1].length;
         if (decPlaces !== 1) {
-            return { type: 'notation', msg: `Check precision in ${fieldLabel}: Must have exactly 1 decimal place.` };
+            return { type: 'notation', msg: `Precision Warning (${fieldLabel}): Requires exactly 1 decimal place.` };
         }
 
-        if (numStr !== expectedOneDecStr) {
-            return { type: 'math', msg: `Incorrect calculation for ${fieldLabel}.` };
+        // Allow tolerance ±0.1 for subtle rounding variances
+        const valUser = parseFloat(numStr);
+        const valExpected = parseFloat(expectedOneDecStr);
+        if (Math.abs(valUser - valExpected) > 0.15) {
+            return { type: 'math', msg: `Calculated value for ${fieldLabel} is incorrect.` };
         }
 
         return null;
     }
 
-    function checkAnswer() {
-        const fxInputEl = document.getElementById('ans-fx');
-        const fyInputEl = document.getElementById('ans-fy');
-        const feedback = document.getElementById('feedback');
-
-        const fxRaw = fxInputEl ? fxInputEl.value : '';
-        const fyRaw = fyInputEl ? fyInputEl.value : '';
-
-        if (!fxRaw.trim() || !fyRaw.trim()) {
-            feedback.innerHTML = '<span class="warning">Please fill out both component fields before submitting.</span>';
+    function handleSubmit() {
+        if (isAwaitingNext) {
+            generateQuestion();
             return;
         }
 
-        // Check Notation / Formatting Errors
-        let fxRes = validateFormatAndDecimal(fxRaw, FxOneDecStr, "Horizontal Component (F<sub>x</sub>)");
-        if (fxRes && fxRes.type === 'notation') {
-            feedback.innerHTML = `<span class="warning">${fxRes.msg}</span>`;
+        const fxInput = document.getElementById('ans-fx');
+        const fyInput = document.getElementById('ans-fy');
+        const feedback = document.getElementById('feedback-area');
+
+        const fxRaw = fxInput.value.trim();
+        const fyRaw = fyInput.value.trim();
+
+        if (!fxRaw || !fyRaw) {
+            feedback.innerHTML = '<div class="feedback-notation">⚠️ Please calculate and enter both F<sub>x</sub> and F<sub>y</sub> before submitting.</div>';
             return;
         }
 
-        let fyRes = validateFormatAndDecimal(fyRaw, FyOneDecStr, "Vertical Component (F<sub>y</sub>)");
-        if (fyRes && fyRes.type === 'notation') {
-            feedback.innerHTML = `<span class="warning">${fyRes.msg}</span>`;
+        // 1. Notation & Format Validation (zero penalty, allows correction)
+        let fxCheck = validateFormatAndDecimal(fxRaw, FxOneDecStr, "F<sub>x</sub>");
+        if (fxCheck && fxCheck.type === 'notation') {
+            feedback.innerHTML = `<div class="feedback-notation">⚠️ ${fxCheck.msg}</div>`;
             return;
         }
 
-        // Check Math Errors
-        let isFxMathWrong = fxRes && fxRes.type === 'math';
-        let isFyMathWrong = fyRes && fyRes.type === 'math';
-
-        if (isFxMathWrong || isFyMathWrong) {
-            handleFailure();
+        let fyCheck = validateFormatAndDecimal(fyRaw, FyOneDecStr, "F<sub>y</sub>");
+        if (fyCheck && fyCheck.type === 'notation') {
+            feedback.innerHTML = `<div class="feedback-notation">⚠️ ${fyCheck.msg}</div>`;
             return;
         }
 
-        // Both Correct
-        feedback.innerHTML = '<span class="correct">Correct! Both force components are accurate.</span>';
-        scoreCorrect++;
-        document.getElementById('correct-count').textContent = scoreCorrect;
-        if (fxInputEl) fxInputEl.disabled = true;
-        if (fyInputEl) fyInputEl.disabled = true;
+        // Attempt is mathematically validated
+        totalAttemptsCount++;
+        document.getElementById('total-attempts').textContent = totalAttemptsCount;
 
-        setTimeout(generateQuestion, 1800);
+        // 2. Mathematical Correctness
+        const isFxWrong = (fxCheck && fxCheck.type === 'math');
+        const isFyWrong = (fyCheck && fyCheck.type === 'math');
+
+        if (isFxWrong || isFyWrong) {
+            // Trigger failure walkthrough
+            triggerWalkthrough(true);
+            return;
+        }
+
+        // Correct Response
+        consecutiveCorrect++;
+        let currentCalculatedScore = Math.min(100, Math.round((consecutiveCorrect / MASTERY_GOAL) * 100));
+        highestMasteryPercentage = Math.max(highestMasteryPercentage, currentCalculatedScore);
+
+        updateScormScore(highestMasteryPercentage);
+        updateUIProgress();
+
+        feedback.innerHTML = '<div class="feedback-banner feedback-correct">✓ Spot on! Both force components are correctly resolved and rounded.</div>';
+        fxInput.disabled = true;
+        fyInput.disabled = true;
+
+        if (consecutiveCorrect >= MASTERY_GOAL) {
+            document.getElementById('victory-card').style.display = 'block';
+        }
+
+        // Automatically load next question after delay
+        setTimeout(() => {
+            generateQuestion();
+        }, 1600);
     }
 
-    function handleFailure() {
-        scoreIncorrect++;
-        document.getElementById('incorrect-count').textContent = scoreIncorrect;
-        
-        const fxInputEl = document.getElementById('ans-fx');
-        const fyInputEl = document.getElementById('ans-fy');
-        if (fxInputEl) fxInputEl.disabled = true;
-        if (fyInputEl) fyInputEl.disabled = true;
 
+    /* ==========================================================================
+       "WALK ME THROUGH THIS ONE" BAILOUT & PEDAGOGY ENGINE
+       ========================================================================== */
+    function triggerWalkthrough(triggeredByError) {
+        // Zero-penalty learning: existing highest mastery score is preserved
+        consecutiveCorrect = 0; // Current run forfeits progress toward streak
+        updateUIProgress();
+
+        const fxInput = document.getElementById('ans-fx');
+        const fyInput = document.getElementById('ans-fy');
+        const feedback = document.getElementById('feedback-area');
         const submitBtn = document.getElementById('submit-btn');
-        submitBtn.textContent = "Next Question";
-        submitBtn.style.backgroundColor = "#e67e22";
-        submitBtn.onclick = function() {
-            generateQuestion();
-        };
+        const bailoutBtn = document.getElementById('bailout-btn');
 
-        document.getElementById('feedback').innerHTML = `
-            <div class="ans-block">[Horizontal Component (F<sub>x</sub>) = ${FxOneDecStr} N]</div>
-            <div class="ans-block">[Vertical Component (F<sub>y</sub>) = ${FyOneDecStr} N]</div>
-            <div class="continue-msg">Review your solution above, then select 'Next Question'.</div>
+        // Populate and disable input fields
+        fxInput.value = `${FxOneDecStr} N`;
+        fyInput.value = `${FyOneDecStr} N`;
+        fxInput.disabled = true;
+        fyInput.disabled = true;
+        fxInput.style.backgroundColor = "#fef9e7";
+        fyInput.style.backgroundColor = "#fef9e7";
+        bailoutBtn.disabled = true;
+
+        // Transform submit button into advance button
+        isAwaitingNext = true;
+        submitBtn.textContent = "Try a Fresh Problem (Enter ↵)";
+        submitBtn.style.backgroundColor = "#d35400";
+        submitBtn.onclick = generateQuestion;
+
+        const trigFuncX = isAngleWithHorizontal ? "cos" : "sin";
+        const trigFuncY = isAngleWithHorizontal ? "sin" : "cos";
+        const trigValX = (isAngleWithHorizontal ? Math.cos(theta_deg * Math.PI / 180) : Math.sin(theta_deg * Math.PI / 180)).toFixed(4);
+        const trigValY = (isAngleWithHorizontal ? Math.sin(theta_deg * Math.PI / 180) : Math.cos(theta_deg * Math.PI / 180)).toFixed(4);
+
+        const refAxisText = isAngleWithHorizontal ? "horizontal (x-axis)" : "vertical (y-axis)";
+        const xSideText = isAngleWithHorizontal ? "adjacent to the angle (uses cosine)" : "opposite the angle (uses sine)";
+        const ySideText = isAngleWithHorizontal ? "opposite the angle (uses sine)" : "adjacent to the angle (uses cosine)";
+
+        let walkthroughHTML = `
+            ${triggeredByError ? '<div class="feedback-banner feedback-incorrect">✗ Incorrect calculation. Review the complete solution below:</div>' : ''}
+            <div class="walkthrough-box">
+                <div class="walkthrough-header">
+                    <span>💡 Step-by-Step Problem Walkthrough</span>
+                </div>
+                <div class="step-item">
+                    <span class="step-num">Step 1: Identify Reference Axis & Geometry</span><br>
+                    The given angle <strong>&theta; = ${theta_deg}&deg;</strong> is measured with respect to the <strong>${refAxisText}</strong>.
+                    Therefore, the horizontal component is ${xSideText}, and the vertical component is ${ySideText}.
+                </div>
+                <div class="step-item">
+                    <span class="step-num">Step 2: Solve Horizontal Component (F<sub>x</sub>)</span><br>
+                    <div class="math-statement">
+                        F<sub>x</sub> = F ${trigFuncX}(${theta_deg}°) = (${F_val} N)(${trigFuncX}(${theta_deg}°)) = (${F_val} N)(${trigValX}) = <strong>${FxOneDecStr} N</strong>
+                    </div>
+                </div>
+                <div class="step-item">
+                    <span class="step-num">Step 3: Solve Vertical Component (F<sub>y</sub>)</span><br>
+                    <div class="math-statement">
+                        F<sub>y</sub> = F ${trigFuncY}(${theta_deg}°) = (${F_val} N)(${trigFuncY}(${theta_deg}°)) = (${F_val} N)(${trigValY}) = <strong>${FyOneDecStr} N</strong>
+                    </div>
+                </div>
+                <div style="font-size: 0.88rem; color: #7f8c8d; margin-top: 6px;">
+                    Take a moment to inspect how the trig functions align with the vector diagram. Press <strong>Enter ↵</strong> to generate a new randomized problem.
+                </div>
+            </div>
         `;
+
+        feedback.innerHTML = walkthroughHTML;
+    }
+
+
+    /* ==========================================================================
+       UI PROGRESS & PROOF EXPORT
+       ========================================================================== */
+    function updateUIProgress() {
+        let displayMastery = highestMasteryPercentage;
+        document.getElementById('mastery-percent').textContent = `${displayMastery}%`;
+        document.getElementById('progress-count').textContent = `${consecutiveCorrect} / ${MASTERY_GOAL}`;
+
+        // Width of smooth progress bar is tied to current highest mastery
+        let fillWidth = `${displayMastery}%`;
+        document.getElementById('progress-fill').style.width = fillWidth;
+    }
+
+    function copyProofToClipboard() {
+        const target = document.getElementById('activity-card');
+        const toast = document.getElementById('toast');
+
+        if (typeof html2canvas === 'undefined') {
+            alert("Clipboard capture module is initializing. Please try again in a moment.");
+            return;
+        }
+
+        html2canvas(target, {
+            scale: 2,
+            backgroundColor: '#ffffff'
+        }).then(canvas => {
+            canvas.toBlob(blob => {
+                if (navigator.clipboard && navigator.clipboard.write) {
+                    const item = new ClipboardItem({ "image/png": blob });
+                    navigator.clipboard.write([item]).then(() => {
+                        toast.style.display = "block";
+                        setTimeout(() => { toast.style.display = "none"; }, 3500);
+                    }).catch(err => {
+                        fallbackDownload(blob);
+                    });
+                } else {
+                    fallbackDownload(blob);
+                }
+            });
+        }).catch(err => {
+            console.error("html2canvas render error:", err);
+            alert("Unable to copy directly. Please capture a screenshot of your screen.");
+        });
+    }
+
+    function fallbackDownload(blob) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Force-Components-Proof-${sessionUID}.png`;
+        a.click();
+        URL.revokeObjectURL(url);
+        const toast = document.getElementById('toast');
+        toast.textContent = "Proof image downloaded! Submit this file to your LMS dropbox.";
+        toast.style.display = "block";
+        setTimeout(() => { toast.style.display = "none"; }, 4000);
     }
 
     window.onload = init;
